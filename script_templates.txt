@@ -1,0 +1,255 @@
+export AZURE_STORAGE_CONNECTION_STRING=<>
+export AZURE_STORAGE_ACCOUNT=<>
+export AZURE_STORAGE_KEY=<>
+
+azure-storage-blob
+azure-identity
+
+az login --tenant <tenant_id>
+
+############################################################
+###### pushing docker to ACR
+############################################################
+# login into Azure Container Registry
+az acr login --name <container_registry_name> 
+docker tag <image_name>:v1 <container_registry_name>.azurecr.io/<image_name>:v1
+docker push <container_registry_name>.azurecr.io/<image_name>:v1
+
+###### Create container from terminal and passing env variables for better security
+###### Remember to use " for environment-variables and not '
+- az container create \
+    --name <container name> \
+    --image container_registry_name.azurecr.io/<container_image_name>:v1 \
+    --resource-group <overall_resource_group> \
+    --restart-policy Always \
+    --dns-name-label <some_sentence_to_create_public_ip> \
+    --ports 80 9696 \
+    --environment-variables "MODEL_URL"="<blob model url>" "AZURE_STORAGE_CONNECTION_STRING"="<blob connection string>" 
+    
+az container logs --resource-group myResourceGroup --name mycontainer1
+az container delete --name ride-prediction-service --resource-group MLOpsZoomCamp
+
+
+############################################################
+###### MLFlow Codesnippets
+############################################################
+###### Getting MLFlow model versions from registry - PYTHON
+# mlflow.set_tracking_uri('http://20.18.227.5:5000/')
+# mlflow.set_experiment("finally")
+# client = MlflowClient()
+# model_name = "ride-duration-prediction"
+# model_version = "1" 
+# URI = client.get_model_version_download_uri(model_name, model_version)
+# print(URI)
+
+###### Instatiate remote MLFlow in Azure
+
+1. Start VM. Save public key and public IP address to add to alias. Change key permissions to only be accessible by owner
+  
+```bash
+ssh-keygen -t rsa -b 4096
+chmod 600 /Users/caiomiyashiro/.ssh/vm-mlops_key.pem
+```
+  
+2. Start PostgreSQL Database and allow VM's IP to connect
+3. Start Storage Container and allow VM's IP to connect
+
+## Connect to VM using bash
+
+1. Writing alias at .ssh/config
+
+``` bash
+Host mlops-zoomcamp
+   HostName 20.18.227.5
+   User azureuser
+   IdentityFile ~/.ssh/vm-mlops_key.pem
+   StrictHostKeyChecking no
+```  
+
+2. Connect to VM using: 
+```bash
+ssh mlops-zoomcamp
+```
+
+3. Install and configure anaconda
+```bash
+wget https://repo.anaconda.com/archive/Anaconda3-2024.02-1-Linux-x86_64.sh
+bash Anaconda3-2024.02-1-Linux-x86_64.sh
+# could install docker and docker container
+
+conda create --name mlflow-tracking
+conda install jupyter scikit-learn  pandas  seaborn  xgboost azure-storage-blob
+pip3 install mlflow psycopg2-binary hyperopt azure-identity
+python -m ipykernel install --user --name myenv --display-name "Python (myenv)" # for notebook
+# conda install -c conda-forge psycopg2-binary will update other packages and create a memory error!
+# conda install mlflow might create error Unable to display MLflow UI - landing page (index.html) not found.
+```
+
+4. Install and configure Azure credentials
+```bash
+brew update && brew install azure-cli  # for mac or the equivalent for windows
+az login  
+# in case of new IP address, you might need to login with "az login --tenant 76529cbb-482f-4415-b366-251e1c034e34"
+```
+
+5. Initiate MLFlow with postgresSQL and blobstorage
+```bash 
+# Setting one of this combination and we DON'T NEED to login to azure
+export AZURE_STORAGE_CONNECTION_STRING="<get from storage container>"
+export AZURE_STORAGE_ACCOUNT="<>"
+export AZURE_STORAGE_KEY="<>"
+
+mlflow server -h 127.0.0.1 -p 5000 --backend-store-uri postgresql://azureuser:<password>@<hostname>:5432/postgres --default-artifact-root wasbs://<blob container>@<storage account>.blob.core.windows.net
+
+mlflow server \
+    --backend-store-uri sqlite:///mlflow_data/mlflow.db \
+    --default-artifact-root ./mlflow_data/artifacts \
+    --host 0.0.0.0 \
+    --port 5001 &
+
+# in case of errors, you can test the database connection from the VM
+sudo apt install postgresql-client
+psql -U <username> -d <database_name> -h <hostname> -p <port>
+psql -h mlopspostgress.postgres.database.azure.com -U azureuser -d postgres -p 5432
+
+az storage blob list --account-name mlopsdata37 --container-name mlops-blob --auth-mode login
+
+
+############################################################
+###### Docker Codesnippets
+############################################################
+docker build -t ride-duration-prediction-service:v1 .
+docker build --progress=plain --no-cache -t real_data_sim:v1 .  # debugging dockerfile printing commands
+
+docker run -it --rm -p 9696:9696 ride-duration-prediction-service_streaming:v1
+
+docker-compose up --build
+
+docker exec -it <container_id_or_name> /bin/bash
+# run image 
+docker run -it --rm mlops_zoomcamp_finalproject-evidently /bin/bash
+
+docker image prune -f
+
+docker run -it --rm -p 9696:9696 ride-duration-prediction-service:v1 
+
+docker run -it --rm mlops_zoomcamp_finalproject-evidently /bin/sh
+
+# restart with changes
+docker-compose up -d --no-deps <service_name>
+docker-compose up -d --no-deps prediction_service  
+
+make docker-down && make docker-up && python scripts/training.py
+
+############################################################
+###### Terraform Codesnippets
+############################################################
+
+terraform output -raw private_key_pem > ~/.ssh/id_rsa.pem
+chmod 600 ~/.ssh/id_rsa.pem
+ssh -i ~/.ssh/id_rsa.pem azureuser@$(terraform output -raw vm_public_ip_address) 
+
+
+# checking cloud-init logs
+sudo cat /var/log/cloud-init-output.log
+
+ssh-keygen -R 4.215.219.42
+
+
+
+############################################################
+###### pre-commit Codesnippets
+############################################################
+
+# creates a config sample and save to a file
+pre-commit sample-config > .pre-commit-config.yaml
+
+pre-commit install
+
+############################################################
+###### Miscellaneous
+############################################################
+
+kill process using a port
+lsof -ti tcp:5001 | xargs kill -9
+
+############################################################
+###### SSH
+############################################################
+scp -i ~/.ssh/id_rsa.pem docker-compose.yml azureuser@4.215.207.30:/home/azureuser/mlops_zoomcamp_finalproject3/docker-compose.yml
+
+# github folder - change owner to allow copy delete, etc
+sudo chown -R azureuser:azureuser mlops_zoomcamp_finalproject/
+
+scp -i ~/.ssh/id_rsa.pem prediction_service/sample_model.pkl azureuser@172.207.126.207:/home/azureuser/mlops_zoomcamp_finalproject/prediction_service/sample_model.pkl
+scp -i ~/.ssh/id_rsa.pem Makefile azureuser@172.207.126.207:/home/azureuser/mlops_zoomcamp_finalproject/Makefile
+
+############################################################
+###### airflow
+############################################################
+
+# 1st time:
+    - download docker compose file https://airflow.apache.org/docs/apache-airflow/2.10.0/docker-compose.yaml
+    - docker compose up airflow-init
+
+docker compose up -d 
+
+# getting inside the scheduler to start tasks
+(get scheduler name with `docker compose ps`)
+    - docker exec -it airflow-airflow-scheduler-1 /bin/bash
+    - (inside scheduler) airflow tasks test postgres_to_data_lake_parquet_single_step extract_and_load_data 2024-07-30
+
+    - airflow dags backfill \
+    --start-date 2024-07-01 \
+    --end-date 2024-08-01 \
+    --reset-dagruns \
+    postgres_to_data_lake_parquet_single_step
+
+# start with flower (monitoring for celery workers)
+docker compose --profile flower up -d     
+
+
+# startin celery directly in the machine
+celery -A airflow.executors.celery_executor.app worker -Q queue1,queue2
+
+# start with multiple workers:
+docker compose --scale airflow-worker=2 -d
+
+############################################################
+###### postgres
+############################################################
+
+CREATE TABLE sales (
+    InvoiceNo VARCHAR(10),
+    StockCode VARCHAR(10),
+    Description VARCHAR(255),
+    Quantity INT,
+    InvoiceDate TIMESTAMP,
+    UnitPrice DECIMAL(10, 2),
+    CustomerID INT,
+    Country VARCHAR(50),
+    PRIMARY KEY (invoicedate, InvoiceNo)
+);
+
+az postgres flexible-server execute --name etlprod \
+    --admin-user adminprod \
+    --admin-password 'ops37!@#' \
+    --database-name postgres \
+    --file-path create_prod_table.sql
+
+psql -h etlprod.postgres.database.azure.com -U adminprod -d postgres
+
+\COPY sales FROM 'Online_Retail_cleaned.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',');    
+
+
+psql -h <server-name>.postgres.database.azure.com -U <admin-username> -d <database-name>
+
+OR 
+
+az postgres flexible-server execute --name <server-name> \
+    --admin-user <admin-username> \
+    --admin-password <admin-password> \
+    --database-name <database-name> \
+    --file-path /path/to/create_table.sql
+
+\COPY sales FROM '/path/to/your/file.csv' WITH (FORMAT csv, HEADER true);    

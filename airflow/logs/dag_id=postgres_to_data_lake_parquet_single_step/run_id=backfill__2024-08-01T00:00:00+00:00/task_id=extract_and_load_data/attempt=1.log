@@ -1,0 +1,87 @@
+[2024-08-19T09:12:25.127+0000] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2024-08-19T09:12:25.219+0000] {taskinstance.py:2603} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: postgres_to_data_lake_parquet_single_step.extract_and_load_data backfill__2024-08-01T00:00:00+00:00 [queued]>
+[2024-08-19T09:12:25.246+0000] {taskinstance.py:2603} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: postgres_to_data_lake_parquet_single_step.extract_and_load_data backfill__2024-08-01T00:00:00+00:00 [queued]>
+[2024-08-19T09:12:25.250+0000] {taskinstance.py:2856} INFO - Starting attempt 1 of 2
+[2024-08-19T09:12:25.312+0000] {taskinstance.py:2879} INFO - Executing <Task(PythonOperator): extract_and_load_data> on 2024-08-01 00:00:00+00:00
+[2024-08-19T09:12:25.365+0000] {standard_task_runner.py:104} INFO - Running: ['***', 'tasks', 'run', 'postgres_to_data_lake_parquet_single_step', 'extract_and_load_data', 'backfill__2024-08-01T00:00:00+00:00', '--job-id', '169', '--pool', 'default_pool', '--raw', '--subdir', 'DAGS_FOLDER/sales.py', '--cfg-path', '/tmp/tmpnbu69zgn']
+[2024-08-19T09:12:25.377+0000] {standard_task_runner.py:105} INFO - Job 169: Subtask extract_and_load_data
+[2024-08-19T09:12:25.378+0000] {logging_mixin.py:190} WARNING - /home/***/.local/lib/python3.12/site-packages/***/task/task_runner/standard_task_runner.py:70 DeprecationWarning: This process (pid=1531) is multi-threaded, use of fork() may lead to deadlocks in the child.
+[2024-08-19T09:12:25.382+0000] {standard_task_runner.py:72} INFO - Started process 1558 to run task
+[2024-08-19T09:12:25.579+0000] {task_command.py:467} INFO - Running <TaskInstance: postgres_to_data_lake_parquet_single_step.extract_and_load_data backfill__2024-08-01T00:00:00+00:00 [running]> on host 70607853bfdd
+[2024-08-19T09:12:25.712+0000] {taskinstance.py:3122} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='postgres_to_data_lake_parquet_single_step' AIRFLOW_CTX_TASK_ID='extract_and_load_data' AIRFLOW_CTX_EXECUTION_DATE='2024-08-01T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='backfill__2024-08-01T00:00:00+00:00'
+[2024-08-19T09:12:25.714+0000] {taskinstance.py:731} INFO - ::endgroup::
+[2024-08-19T09:12:25.729+0000] {sales.py:34} INFO - Processing data for date: 2024-07-31
+[2024-08-19T09:12:25.738+0000] {base.py:84} INFO - Retrieving connection 'azure_prod_db'
+[2024-08-19T09:12:27.156+0000] {sales.py:48} INFO - Number of retrieved rows for 2024-07-31: 10016
+[2024-08-19T09:12:29.790+0000] {base.py:84} INFO - Retrieving connection 'azure_datalake'
+[2024-08-19T09:12:29.811+0000] {_universal.py:513} INFO - Request URL: 'https://etl3737.dfs.core.windows.net/datalake/raw%2Fsales%2Fyear%3D2024%2Fmonth%3D07%2F31.parquet?resource=REDACTED'
+Request method: 'PUT'
+Request headers:
+    'x-ms-version': 'REDACTED'
+    'Accept': 'application/json'
+    'User-Agent': 'azsdk-python-storage-dfs/12.16.0 Python/3.12.5 (Linux-6.10.0-linuxkit-aarch64-with-glibc2.36)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '290c742e-5e0b-11ef-8275-0242ac120008'
+    'Authorization': 'REDACTED'
+No body was attached to the request
+[2024-08-19T09:12:29.945+0000] {_universal.py:549} INFO - Response status: 201
+Response headers:
+    'Last-Modified': 'Mon, 19 Aug 2024 09:12:29 GMT'
+    'ETag': '"0x8DCC02F0D58F81C"'
+    'Server': 'Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'x-ms-request-id': '66dfa6c4-301f-0049-2e17-f2cac5000000'
+    'x-ms-version': 'REDACTED'
+    'x-ms-client-request-id': '290c742e-5e0b-11ef-8275-0242ac120008'
+    'Date': 'Mon, 19 Aug 2024 09:12:29 GMT'
+    'Content-Length': '0'
+[2024-08-19T09:12:30.005+0000] {_universal.py:510} INFO - Request URL: 'https://etl3737.dfs.core.windows.net/datalake/raw%2Fsales%2Fyear%3D2024%2Fmonth%3D07%2F31.parquet?action=REDACTED&position=REDACTED'
+Request method: 'PATCH'
+Request headers:
+    'Content-Length': '175302'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/json'
+    'Accept': 'application/json'
+    'User-Agent': 'azsdk-python-storage-dfs/12.16.0 Python/3.12.5 (Linux-6.10.0-linuxkit-aarch64-with-glibc2.36)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '292a16b4-5e0b-11ef-8275-0242ac120008'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+[2024-08-19T09:12:30.065+0000] {_universal.py:549} INFO - Response status: 202
+Response headers:
+    'Server': 'Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'x-ms-request-id': '66dfa6c5-301f-0049-2f17-f2cac5000000'
+    'x-ms-version': 'REDACTED'
+    'x-ms-client-request-id': '292a16b4-5e0b-11ef-8275-0242ac120008'
+    'Date': 'Mon, 19 Aug 2024 09:12:29 GMT'
+    'Content-Length': '0'
+[2024-08-19T09:12:30.079+0000] {_universal.py:513} INFO - Request URL: 'https://etl3737.dfs.core.windows.net/datalake/raw%2Fsales%2Fyear%3D2024%2Fmonth%3D07%2F31.parquet?action=REDACTED&position=REDACTED&close=REDACTED'
+Request method: 'PATCH'
+Request headers:
+    'If-Match': '"0x8DCC02F0D58F81C"'
+    'x-ms-version': 'REDACTED'
+    'Accept': 'application/json'
+    'User-Agent': 'azsdk-python-storage-dfs/12.16.0 Python/3.12.5 (Linux-6.10.0-linuxkit-aarch64-with-glibc2.36)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '29356dc0-5e0b-11ef-8275-0242ac120008'
+    'Authorization': 'REDACTED'
+No body was attached to the request
+[2024-08-19T09:12:30.169+0000] {_universal.py:549} INFO - Response status: 200
+Response headers:
+    'Last-Modified': 'Mon, 19 Aug 2024 09:12:30 GMT'
+    'ETag': '"0x8DCC02F0D789C00"'
+    'Server': 'Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'x-ms-request-id': '66dfa6c8-301f-0049-3017-f2cac5000000'
+    'x-ms-version': 'REDACTED'
+    'x-ms-client-request-id': '29356dc0-5e0b-11ef-8275-0242ac120008'
+    'Date': 'Mon, 19 Aug 2024 09:12:30 GMT'
+    'Content-Length': '0'
+[2024-08-19T09:12:30.188+0000] {sales.py:89} INFO - File uploaded to raw/sales/year=2024/month=07/31.parquet
+[2024-08-19T09:12:30.222+0000] {python.py:240} INFO - Done. Returned value was: None
+[2024-08-19T09:12:30.408+0000] {taskinstance.py:340} INFO - ::group::Post task execution logs
+[2024-08-19T09:12:30.478+0000] {taskinstance.py:352} INFO - Marking task as SUCCESS. dag_id=postgres_to_data_lake_parquet_single_step, task_id=extract_and_load_data, run_id=backfill__2024-08-01T00:00:00+00:00, execution_date=20240801T000000, start_date=20240819T091225, end_date=20240819T091230
+[2024-08-19T09:12:30.735+0000] {local_task_job_runner.py:261} INFO - Task exited with return code 0
+[2024-08-19T09:12:30.787+0000] {taskinstance.py:3891} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2024-08-19T09:12:30.789+0000] {local_task_job_runner.py:240} INFO - ::endgroup::
