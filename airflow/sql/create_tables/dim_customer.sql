@@ -1,6 +1,8 @@
-CREATE TABLE fact_sales (
+CREATE TABLE dw.dim_customer (
+    customer_sk INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, -- Surrogate key
     customer_id INT,
-    country VARCHAR(50),
-    end_date DATE
-    PRIMARY KEY (CustomerID)
+    customer_name VARCHAR(255),
+    customer_email VARCHAR(255),
+    country_id INT,
+    end_date TIMESTAMP -- SCD2 column: NULL if active
 );

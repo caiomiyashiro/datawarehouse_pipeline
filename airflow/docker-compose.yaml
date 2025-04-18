@@ -24,7 +24,7 @@
 # The following variables are supported:
 #
 # AIRFLOW_IMAGE_NAME           - Docker image name used to run Airflow.
-#                                Default: apache/airflow:2.10.0
+#                                Default: apache/airflow:2.10.5
 # AIRFLOW_UID                  - User ID in Airflow containers
 #                                Default: 50000
 # AIRFLOW_PROJ_DIR             - Base path to which all the files will be volumed.
@@ -49,12 +49,11 @@ x-airflow-common:
   # In order to add custom dependencies or upgrade provider packages you can use your extended image.
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
-  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.10.0}
+  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.10.5}
   # build: .
   environment:
     &airflow-common-env
-    AIRFLOW__CORE__EXECUTOR: LocalExecutor
-    AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
@@ -78,6 +77,9 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - ./python:/opt/python           # Custom Python code
+    - ./sql:/opt/sql                 # Custom SQL code
+    - ./data:/opt/data               # CSV/data files
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -93,14 +95,24 @@ services:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
+      TABLES_DB: postgres
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 10s
       retries: 5
       start_period: 5s
+    ports:
+      - "5432:5432"
     restart: always
+  
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8079:8080"
 
   redis:
     # Redis is limited to 7.2-bookworm due to licencing change
@@ -118,9 +130,6 @@ services:
 
   airflow-webserver:
     <<: *airflow-common
-    build:
-      context: .
-      dockerfile: airflow.dockerfile
     command: webserver
     ports:
       - "8080:8080"
@@ -138,10 +147,7 @@ services:
 
   airflow-scheduler:
     <<: *airflow-common
-    build:
-      context: .
-      dockerfile: airflow.dockerfile
-    command: bash -c "pip install docker && airflow scheduler"
+    command: scheduler
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
       interval: 30s
@@ -156,10 +162,7 @@ services:
 
   airflow-worker:
     <<: *airflow-common
-    build:
-      context: .
-      dockerfile: airflow.dockerfile
-    command: bash -c "pip install docker && celery worker"
+    command: celery worker
     healthcheck:
       # yamllint disable rule:line-length
       test:
@@ -173,21 +176,14 @@ services:
       <<: *airflow-common-env
       # Required to handle warm shutdown of the celery workers properly
       # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
-      DUMB_INIT_SETSID: "0"
-    restart: always
+      DUMB_INIT_SETSID: "0"      
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    volumes:
-      - ./dags:/opt/airflow/dags
-      - /var/run/docker.sock:/var/run/docker.sock
 
   airflow-triggerer:
     <<: *airflow-common
-    build:
-      context: .
-      dockerfile: airflow.dockerfile
     command: triggerer
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
@@ -203,9 +199,6 @@ services:
 
   airflow-init:
     <<: *airflow-common
-    build:
-      context: .
-      dockerfile: airflow.dockerfile
     entrypoint: /bin/bash
     # yamllint disable rule:line-length
     command:
@@ -280,12 +273,6 @@ services:
       - bash
       - -c
       - airflow
-  
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - "8079:8080"
 
   # You can enable flower by adding "--profile flower" option e.g. docker-compose --profile flower up
   # or by explicitly targeted on the command line e.g. docker-compose up flower.

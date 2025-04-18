@@ -1,1 +1,7 @@
 .env
+logs/
+__pycache__/
+data/
+airflow/airflow/
+.DS_Store
+script_templates.txt
