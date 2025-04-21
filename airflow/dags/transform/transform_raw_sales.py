@@ -13,15 +13,15 @@ default_args = {
     'catchup': True
 }
 
-with DAG('load_dw_tables_from_sales', 
+with DAG('transform_sales', 
          default_args=default_args,
          schedule_interval='@daily',
-         template_searchpath='/opt/sql/load') as dag:
+         template_searchpath='/opt/sql/transform') as dag:
     
     wait_for_upstream = ExternalTaskSensor(
-        task_id="wait_for_stage_sales",
-        external_dag_id="transform_sales", # The DAG to monitor
-        external_task_id="transform_sales", # The specific task to wait for
+        task_id="wait_for_load_raw_sales",
+        external_dag_id="extract_sales",                    # The DAG to monitor
+        external_task_id="generate_daily_data_raw_sales",   # The specific task to wait for
         allowed_states=['success'],         # Wait for success (default)
         failed_states=['failed', 'skipped'],# Fail if upstream fails/skips
         poke_interval=15,                   # Check every 15 seconds
@@ -29,23 +29,11 @@ with DAG('load_dw_tables_from_sales',
         mode='poke',                        # 'poke' or 'reschedule'
     )
 
-    load_dim_country = SQLExecuteQueryOperator(
-        task_id='load_countries',
+    transform_sales = SQLExecuteQueryOperator(
+        task_id='transform_sales',
         conn_id='postgres_default',
-        sql='load_dim_country.sql'
+        sql='transform_sales.sql'
     )
 
-    load_dim_customer = SQLExecuteQueryOperator(
-        task_id='load_customers',
-        conn_id='postgres_default',
-        sql='load_dim_customer.sql'
-    )
-    
-    load_fact_sales = SQLExecuteQueryOperator(
-        task_id='load_fact_sales',
-        conn_id='postgres_default',
-        sql='load_fact_sales.sql'
-    )
-
-    wait_for_upstream >> load_dim_country >> load_dim_customer >> load_fact_sales
+    wait_for_upstream >> transform_sales
 

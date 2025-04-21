@@ -10,15 +10,16 @@ CREATE TABLE raw.sales (
 );
 
 CREATE TABLE stage.sales (
-    InvoiceNo BIGINT,
-    StockCode VARCHAR(10),
-    Description VARCHAR(255),
-    Quantity INT,
-    InvoiceDate TIMESTAMP,
-    UnitPrice DECIMAL(10, 2),
-    CustomerID INT,
-    Country VARCHAR(50),
-    PRIMARY KEY (InvoiceNo)
+    invoice_number BIGINT,
+    stock_code VARCHAR(10),
+    sale_description VARCHAR(255),
+    quantity INT,
+    invoice_date TIMESTAMP,
+    unit_price DECIMAL(10, 2),
+    total_sale_usd DECIMAL(15, 2),
+    customer_id INT,
+    country_name VARCHAR(50) NULL, 
+    PRIMARY KEY (invoice_number)
 );
 
 CREATE TABLE dw.fact_sales (

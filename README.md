@@ -8,10 +8,13 @@
 ---
 
 ## **Project Overview**  
-This project automates the generation and transformation of retail sales data using Apache Airflow. It includes:  
-- **Data Generation**: Simulates retail transactions (sales, customers, products).  
-- **Data Transformation**: Cleans, aggregates, and prepares data for analytics.  
+This project automates the generation and transformation of simulated retail sales data using Apache Airflow. It includes:  
+- **Data Extration and Generation**: Simulates retail transactions (sales, customers, products).  
+- **Data Transformation**: Cleans, aggregates, and prepares data for analytics.
+- **Data Loading**: Loads data into datawarehouse system. 
 - **Workflow Orchestration**: Scheduled DAGs to manage ETL processes.  
+
+For more information about how to add a DAG, please refer [here](docs/adding_dags.md)
 
 ---
 
@@ -27,9 +30,10 @@ This project automates the generation and transformation of retail sales data us
 | **Component**       | **Technology**          |  
 |----------------------|-------------------------|  
 | Workflow Orchestration | Apache Airflow 2.10.5 |  
-| Database             | PostgreSQL 13           |  
+| Database              | PostgreSQL 13           |  
 | Queueing System       | Redis 7.2              |  
 | Containerization      | Docker Compose         |  
+| Data Processing      | Python and SQL         | 
 
 ---
 
@@ -39,76 +43,70 @@ This project automates the generation and transformation of retail sales data us
 - Python 3.8+ (for local development)  
 
 ### **2. Configure Environment**  
-Create a `.env` file:  
-```bash  
-# .env  
-AIRFLOW_UID=50000  
-AIRFLOW_PROJ_DIR=./dags  # Path to your DAGs directory  
-```
+Create a `.env` file. You can use `.env_temp` as a reference for the needed environment variables:  
 
 ### **3. Start Services**  
 ```bash  
-docker compose up -d  
-```
+docker compose up -d --build
+```  
 
-### **4. Access Airflow UI**  
+#### 3.a. Docker compose will start the following services:  
+
+| **Service**       | **Port**          |  
+|-------------------|-------------------|  
+| postgres          | 5432     |  
+| adminer           | 8079     |  
+| redis             | 6379     |  
+| airflow-webserver | 8080     |  
+| airflow-scheduler |          | 
+| airflow-worker    |          | 
+| airflow-triggerer |          | 
+| airflow-cli       |          | 
+
+#### 3.b. Postgres will execute `sql/initialize_tables.sh`  
+
+* Create schemas  
+* Create tables in different schemas
+* Create foreign keys
+
+### **4. Manually set Postgress connection with Airflow**
+
+```bash  
+./airflow/local_scripts/initialize_airflow_postgres_connection.sh
+```  
+
+### **5. Access Airflow UI**  
 Visit `http://localhost:8080` and log in with:  
-- **Username**: `airflow`  
-- **Password**: `airflow`  
+- **Username**: check `_AIRFLOW_WWW_USER_USERNAME` in .env
+- **Password**: check `_AIRFLOW_WWW_USER_PASSWORD` in .env 
 
 ---
 
 ## **Project Structure**  
 ```  
-.  
-├── dags/                     # Airflow DAGs  
-│   ├── data_generation.py     # Simulates retail transactions  
-│   └── data_transformation.py # Cleans & aggregates data  
-├── config/                   # Airflow configuration overrides  
-├── plugins/                  # Custom Airflow plugins  
-├── logs/                     # Airflow task logs  
-├── docker-compose.yml        # Docker Compose setup  
-└── .env                      # Environment variables  
+.
+├── airflow.cfn                          # Airflow configuration file
+├── airflow.dockerfile                   # Custom Dockerfile for building the Airflow image
+├── config/                              # Airflow configuration overrides and custom settings
+├── dags/                                # Airflow DAGs (organized by ETL phase)
+│   ├── extract/                         # DAG/tasks for extracting data from source systems
+│   ├── load/                            # DAG/tasks for loading dimension tables
+│   └── transform/                       # DAG/tasks for transforming raw sales data
+├── data/                                # Sample data and notebooks
+├── docker-compose.yaml                  # Docker Compose setup for Airflow and dependencies
+├── local_scripts/                       # Utility scripts for local setup
+│   └── initialize_airflow_postgres_connection.sh # Script to initialize Airflow Postgres connection
+├── plugins/                             # Custom Airflow plugins
+├── python/                              # Python modules for ETL logic
+├── sql/                                 # SQL scripts for schema, table creation, and ETL
 ```
 
 ---
 
-## **Running a Backfill**  
-Reprocess data for a specific date range:  
-```bash  
-docker compose exec airflow-scheduler airflow dags backfill \  
-  --start-date 2024-03-10 \  
-  --end-date 2024-04-08 \  
-  --reset-dagruns \  
-  retail_data_generate_transform  
-```
-
----
-
-## **Data Pipeline Architecture**  
+## **Data Pipeline Overall Architecture**  
 ```mermaid  
 graph TD  
-  A[Generate Retail Data] -->|Raw Sales| B[PostgreSQL]  
-  B --> C[Transform Data]  
-  C -->|Aggregated Metrics| D[Analytics Database]  
+  A[Source Data] -->|Extract| B[PostgreSQL [raw]]  
+  B -->|Transform| C[PostgreSQL [stage]]  
+  C -->|Load / Aggregate| D[PostgreSQL [dw]]  
 ```
-
-
-
-# How to Run:  
-
-- Start Airflow with ``
-- Start docker-compose with ``
-- Create table sales in adminer
-- load data into sales table
-    - docker cp Online_Retail_cleaned.csv airflow-postgres-1:/tmp/
-    - docker exec -it airflow-postgres-1 bash
-    - psql -U airflow -d postgres
-    - \COPY prod_sales FROM 'tmp/Online_Retail_cleaned.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',');  
-- create other dim tables in adminer
-    - docker cp dim_country.csv airflow-postgres-1:/tmp/
-    - docker cp dim_customer.csv airflow-postgres-1:/tmp/
-    - docker exec -it airflow-postgres-1 bash
-    - psql -U airflow -d postgres
-    - \COPY dim_country FROM 'tmp/dim_country.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',');
-    - \COPY dim_customer FROM 'tmp/dim_customer.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',');

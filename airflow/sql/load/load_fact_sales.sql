@@ -18,22 +18,22 @@ CREATE TEMPORARY TABLE dim_customer_valid AS (
 -- There might be customers with changing country within 1 day. customer_sk represents the latest country in that day.
 CREATE TEMPORARY TABLE transformed_sales AS (
     SELECT    
-        s.invoiceno     as invoice_number,
-        s.stockcode     as stock_code,
-        s.description   as sale_description,
-        s.quantity      as quantity,
-        s.invoicedate   as invoice_date,
-        s.unitprice     as unit_price,
-        d.customer_sk   as customer_sk,
-        c.country_id
-    FROM raw.sales s
+        s.invoice_number        as invoice_number,
+        s.stock_code            as stock_code,
+        s.sale_description      as sale_description,
+        s.quantity              as quantity,
+        s.invoice_date          as invoice_date,
+        s.unit_price            as unit_price,
+        d.customer_sk           as customer_sk,
+        c.country_id            as country_id
+    FROM stage.sales s
     LEFT JOIN dw.dim_country c 
-        ON s.country = c.country_name
+        ON s.country_name = c.country_name
     LEFT JOIN dim_customer_valid d 
-        ON s.customerid = d.customer_id
+        ON s.customer_id = d.customer_id
     WHERE c.country_id IS NOT NULL
         AND d.customer_sk IS NOT NULL
-        AND DATE(s.invoicedate) = '{{ ds }}'::date  -- Parameterized filter
+        AND DATE(s.invoice_date) = '{{ ds }}'::date  -- Parameterized filter
 );
 
 INSERT INTO dw.fact_sales (

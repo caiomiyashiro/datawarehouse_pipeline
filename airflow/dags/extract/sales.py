@@ -4,7 +4,7 @@ from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 
 from datetime import datetime, timedelta
 import sys
-import pandas as pd
+import os
 
 def generate_daily_data(target_date, **kwargs):
     """Main processing function"""
@@ -15,17 +15,17 @@ def generate_daily_data(target_date, **kwargs):
         sample_data_filename='Online_Retail_cleaned.csv',
         target_date=target_date,
         conn_params={
-            'dbname': 'postgres',
-            'user': 'airflow',
-            'password': 'airflow',
-            'host': 'postgres',  # Docker service name
-            'port': 5432
+            'dbname': os.environ.get("POSTGRES_DATA_DB"),
+            'user': os.environ.get("POSTGRES_USER"),
+            'password': os.environ.get("POSTGRES_PASSWORD"),
+            'host': os.environ.get("POSTGRES_HOST"),  # Docker service name
+            'port': os.environ.get("POSTGRES_PORT")
         }
     )
 
 default_args = {
-    'owner': 'airflow',
-    'start_date': datetime(2025, 4, 1),
+    'owner': os.environ.get("AIRFLOW_DEFAULT_OWNER"),
+    'start_date': datetime.strptime(os.environ.get("AIRFLOW_DEFAULT_START_DATE"), '%Y-%m-%d'),
     'retries': 1,
     'retry_delay': timedelta(minutes=5)
 }

@@ -5,6 +5,7 @@ import numpy as np
 from datetime import datetime
 import sys
 import time
+import os
 
 def insert_sampled_data(sample_data_filename:str, target_date:str,
                        conn_params=None, table_name:str='sales'):
@@ -16,15 +17,10 @@ def insert_sampled_data(sample_data_filename:str, target_date:str,
         conn_params: PostgreSQL connection parameters
         table_name: Target table name in database
     """
-    if conn_params is None:
-        conn_params = {
-            'dbname': 'postgres',
-            'user': 'airflow',
-            'password': 'airflow',
-            'host': 'localhost',
-            'port': 5432
-        }
 
+    # print the above database env variables
+    print(f"Database connection parameters: {conn_params}")
+    
     sys.path.append('/opt/data')    
     sample_data = pd.read_csv('/opt/data/'+sample_data_filename)
     # Convert InvoiceDate to datetime
