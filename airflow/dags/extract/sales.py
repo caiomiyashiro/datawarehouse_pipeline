@@ -27,7 +27,8 @@ default_args = {
     'owner': os.environ.get("AIRFLOW_DEFAULT_OWNER"),
     'start_date': datetime.strptime(os.environ.get("AIRFLOW_DEFAULT_START_DATE"), '%Y-%m-%d'),
     'retries': 1,
-    'retry_delay': timedelta(minutes=5)
+    'retry_delay': timedelta(minutes=5),
+    'catchup':True
 }
 
 with DAG('extract_sales', 

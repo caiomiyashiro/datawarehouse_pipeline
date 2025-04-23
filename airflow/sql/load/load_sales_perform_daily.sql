@@ -1,3 +1,8 @@
+-- Step 1: Delete existing records for the target date
+DELETE FROM dw.agg_sales_performance
+WHERE DATE(period) >= '{{ ds }}'::timestamp  -- Start of day
+  AND DATE(period) < '{{ ds }}'::timestamp + INTERVAL '1 day';  -- End of day
+
 -- Insert into target table (replace 'sales_performance' with your table name)
 INSERT INTO dw.agg_sales_performance (
   period,
@@ -23,7 +28,7 @@ WITH sales_data AS (
     DATE_TRUNC('month', invoice_date) AS sale_month,
     quantity,
     unit_price,
-    customer_id,
+    customer_sk,
     country_id,
     quantity * unit_price AS line_total
   FROM dw.fact_sales
@@ -36,19 +41,19 @@ SELECT
   'daily' AS period_type,
   SUM(line_total) AS total_revenue,
   COUNT(DISTINCT invoice_number) AS orders_count,
-  COUNT(DISTINCT customer_id) AS active_customers,
-  COUNT(DISTINCT CASE WHEN customer_id IS NOT NULL THEN customer_id END) * 1.0 / NULLIF(COUNT(DISTINCT invoice_number), 0) AS conversion_rate,
-  SUM(line_total) / NULLIF(COUNT(DISTINCT customer_id), 0) AS avg_customer_value,
+  COUNT(DISTINCT customer_sk) AS active_customers,
+  COUNT(DISTINCT CASE WHEN customer_sk IS NOT NULL THEN customer_sk END) * 1.0 / NULLIF(COUNT(DISTINCT invoice_number), 0) AS conversion_rate,
+  SUM(line_total) / NULLIF(COUNT(DISTINCT customer_sk), 0) AS avg_customer_value,
   SUM(quantity) AS total_units_sold,
   SUM(line_total) / NULLIF(SUM(quantity), 0) AS avg_unit_price,
   COUNT(DISTINCT country_id) AS active_countries,
   SUM(line_total) FILTER (WHERE country_id = 20) AS domestic_sales,
   COUNT(DISTINCT invoice_number) * 1.0 / NULLIF(COUNT(DISTINCT DATE_PART('hour', invoice_date)), 0) AS orders_per_hour,
-  SUM(line_total) FILTER (WHERE customer_id IN (
-    SELECT customer_id 
-    FROM fact_sales 
+  SUM(line_total) FILTER (WHERE customer_sk IN (
+    SELECT customer_sk 
+    FROM dw.fact_sales 
     WHERE DATE(invoice_date) <= '{{ ds }}'::DATE  -- Historical filter
-    GROUP BY customer_id 
+    GROUP BY customer_sk 
     HAVING COUNT(DISTINCT invoice_number) > 1
   )) AS repeat_customer_revenue,
   SUM(line_total * 0.3) AS estimated_gross_profit

@@ -1,12 +1,13 @@
 from airflow import DAG
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.sensors.external_task import ExternalTaskSensor
+import os
 
 from datetime import datetime, timedelta
 
 default_args = {
-    'owner': 'airflow',
-    'start_date': datetime(2025, 4, 15),
+    'owner': os.environ.get("AIRFLOW_DEFAULT_OWNER"),
+    'start_date': datetime.strptime(os.environ.get("AIRFLOW_DEFAULT_START_DATE"), '%Y-%m-%d'),
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
     'depends_on_past': True,
@@ -20,7 +21,7 @@ with DAG('load_dw_tables_from_sales',
     
     wait_for_upstream = ExternalTaskSensor(
         task_id="wait_for_stage_sales",
-        external_dag_id="transform_sales", # The DAG to monitor
+        external_dag_id="transform_sales",  # The DAG to monitor
         external_task_id="transform_sales", # The specific task to wait for
         allowed_states=['success'],         # Wait for success (default)
         failed_states=['failed', 'skipped'],# Fail if upstream fails/skips
