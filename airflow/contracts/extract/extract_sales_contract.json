@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Raw Sales Table Data Contract",
+  "description": "Defines the structure and quality expectations for the raw.sales table.",
+  "type": "object",
+  "properties": {
+    "StockCode": {
+      "type": "string",
+      "maxLength": 10,
+      "minLength": 1, 
+      "pattern": "^[A-Za-z0-9]+$", 
+      "description": "Product stock code."
+    },
+    "Description": {
+      "type": "string",
+      "maxLength": 255,
+      "minLength": 1, 
+      "description": "Product description."
+    },
+    "Quantity": {
+      "type": "integer",
+      "description": "Number of units sold in this transaction.",
+      "minimum": 1  
+    },
+    "InvoiceDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of the invoice."
+    },
+    "UnitPrice": {
+      "type": "number",
+      "description": "Price per unit of product (in transaction currency).",
+      "minimum": 0.0,
+      "multipleOf": 0.01
+    },
+    "CustomerID": {
+      "type": "integer",
+      "description": "Unique identifier for the customer.",
+      "minimum": 1  
+    },
+    "Country": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 2,
+      "description": "Country where the transaction occurred."      
+    }
+  },
+  "required": [
+    "StockCode",
+    "Description",
+    "Quantity",
+    "InvoiceDate",
+    "UnitPrice",
+    "CustomerID",
+    "Country"
+  ],
+  "additionalProperties": false,
+  "metadata": {
+    "owner": "data-eng-team@example.com",
+    "retention_period_days": 365,
+    "sla": "Data available by 02:00 UTC daily"
+  }
+}

@@ -54,6 +54,7 @@ Create a `.env` file. You can use `.env_temp` as a reference for the needed envi
 
 ## **3. Start Services**  
 ```bash  
+docker compose up airflow-init
 docker compose up -d --build
 ```  
 
